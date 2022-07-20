@@ -1,0 +1,38 @@
+# some gisty stuff for configuring wsl2 with x on an Azure VM
+
+# OS: Windows Server 2022 Datacenter Edition
+
+# Use a machine size that shows "Nested Virtualization: True" under the Supported Features documentation, 
+# e.g. https://docs.microsoft.com/en-us/azure/virtual-machines/ddv4-ddsv4-series
+
+# Features -> enable Hyper-V
+
+# Run powershell as administrator
+Enable-WindowsOptionalFeature -Online -NoRestart -FeatureName Microsoft-Windows-Subsystem-Linux
+Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
+wsl --install -d Ubuntu
+
+# Install kernel update by downloading and executing:
+https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+
+# Reboot as needed
+
+# bash
+
+# if /etc/resolv.conf is missing, exit bash, go into command prompt, type:
+wsl --shutdown
+# then run bash again and check for it - troubleshoot further if needed
+
+sudo apt update
+
+# install chocolatey on the VM in admin powershell window via
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+choco install vcxsrv
+
+New-NetFirewallRule -DisplayName "WSL" -Direction Inbound -InterfaceAlias "vEthernet (WSL)" -Action Allow
+
+# Use the "X-Launch" shortcut on the desktop to start the x server, and make sure you set it to allow all inbound connections (third checkbox on the screen with three checkboxes)
+
+# Make sure to set the DISPLAY environment variable in bash to the IP of the WSL interface on the VM. For instance, you could add code to .bashrc that sets
+DISPLAY=$(grep nameserver /etc/resolv.conf |awk '{print $2}'):0
